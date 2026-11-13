@@ -5,26 +5,47 @@
 }: let
   inherit (lib) mkOption types;
 
+  ############ Declaration ###############
   wireSubmodule = types.submodule ({
     name, ...
   }: {
     options = {
-      wireGauge = mkOption { type = types.str; }; # This is temporary
-      
-      pinNames = mkOption {
+      # Circuit information
+      pinLabel = mkOption {
+        type = types.str;
+        description = "Label for pin connected by this wire";
+      };
+      pinColor = mkOption {
+        type = types.str;
+        description = "Color for pin connected by this wire";
+      };
+
+      # Connection information
+      connList = mkOption {
         type = types.listOf types.str;
         default = [];
-        description = "Pins carried by this wire";
+        description: "Connectors joined by this wire";
       };
-      pinColors = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "Colors by pin in order";
-      };
+
+      # Electrical details - TODO
+      wireGauge = mkOption { type = types.str; };
     };
 
     config = {};
   });
-in {
 
+  ############ Resolution ################
+  wireResolve = attrs: {};  # TODO
+in {
+  ############ Declaration ###############
+  options.wires = mkOption {  # TODO
+    type = types.attrsOf wireSubmodule;
+    description = "Declaration of all extant pin-to-pin connections";
+  };
+  
+  ############ Resolution ################
+  options.system.resolvedWires = mkOption {};
+
+  ############ Validation ################
+  #config.assertions = {};
 }

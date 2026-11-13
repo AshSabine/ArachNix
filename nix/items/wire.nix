@@ -6,7 +6,7 @@
   inherit (lib) mkOption types;
 
   ############ Declaration ###############
-  wireSubmodule = types.submodule ({
+  wireDeclaration = types.submodule ({
     name, ...
   }: {
     options = {
@@ -35,16 +35,24 @@
   });
 
   ############ Resolution ################
-  wireResolve = attrs: {};  # TODO
+  resolveWire = attrs: {};  # TODO
+
+  wireResolution = types.submodule ({
+    name, ...
+  }: {
+    options = {};
+  });
 in {
   ############ Declaration ###############
   options.wires = mkOption {  # TODO
-    type = types.attrsOf wireSubmodule;
+    type = types.attrsOf wireDeclaration;
     description = "Declaration of all extant pin-to-pin connections";
   };
   
   ############ Resolution ################
-  options.system.resolvedWires = mkOption {};
+  options.system.resolvedWires = mkOption {
+    type = types.attrsOf wireResolution;
+  };
 
   ############ Validation ################
   #config.assertions = {};

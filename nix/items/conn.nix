@@ -6,7 +6,31 @@
   inherit (lib) mkOption types;
 
   ############ Declaration ###############
-  connSubmodule = types.submodule ({
+  connDeclaration = types.submodule ({
+    name, ...
+  }: {
+    options = {
+      connType = mkOption { type = types.str; };    # JST, Molex, etc.
+      connSubtype = mkOption { type = types.str; }; # male/andro/female etc.
+
+      pinCount = mkOption { type = types.int; };
+    };
+
+    config = {};
+  });
+
+  ############ Resolution ################
+  resolveConn = path: attrs:
+    if attrs ? pinCount then {
+      "${lib.last path}" = attrs // { groups = lib.init path; };
+    } else builtins.foldl' (acc: name: let
+      child = resolveConn (path ++ [name]) attrs.${name};
+      collisions = builtins.intersectAttrs acc child;
+    in if collisions != {} then
+      throw "ERROR: Duplicate connector names detected across groups: ${builtins.toJSON (builtins.attrNames collisions)}"
+    else acc // child) {} (builtins.attrNames attrs);
+    
+  connResolution = types.submodule ({
     name, ...
   }: {
     options = {
@@ -31,17 +55,6 @@
 
     config = {};
   });
-
-  ############ Resolution ################
-  connResolve = path: attrs:
-    if attrs ? pinCount then {
-      "${lib.last path}" = attrs // { groups = lib.init path; };
-    } else builtins.foldl' (acc: name: let
-      child = connResolve (path ++ [name]) attrs.${name};
-      collisions = builtins.intersectAttrs acc child;
-    in if collisions != {} then
-      throw "ERROR: Duplicate connector names detected across groups: ${builtins.toJSON (builtins.attrNames collisions)}"
-    else acc // child) {} (builtins.attrNames attrs);
 in {
   ############ Declaration ###############
   options.connectors = mkOption {
@@ -51,11 +64,11 @@ in {
 
   ############ Resolution ################
   options.system.resolvedConnectors = mkOption {
-    type = types.attrsOf connSubmodule;
+    type = types.attrsOf connResolution;
     readOnly = true; internal = true;
   };
 
-  config.system.resolvedConnectors = flattenSockets [] config.conns;
+  config.system.resolvedConnectors = resolveConn [] config.connectors;
   
   ############ Validation ################
   #config.assertions = {};

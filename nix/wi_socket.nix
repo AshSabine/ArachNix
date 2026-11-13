@@ -31,13 +31,22 @@
   };
 
   flattenSockets = path: attrs:
-    if attrs ? pins then {
+    if attrs ? pinCount then {
       "${builtins.concatStringsSep "." path}" = attrs // { groups = lib.init path; };
     } else builtins.foldl'
       (acc: name: acc // flattenSockets (path ++ [name]) attrs.${name})
       {} (builtins.attrNames attrs);
 in {
-  options.connectors = mkOption {
-    type = types.attrsOf connectorSubmodule;
+  options.sockets = mkOption {
+    type = types.attrs;
+    default = {};
+    description = "Hierarchical declaration of connectors.";
   };
+
+  options.system.resolvedSockets = mkOption {
+    type = types.attrsOf socketSubmodule;
+    readOnly = true; internal = true;
+  };
+
+  config.system.resolvedSockets = flattenSockets [] config.sockets;
 }

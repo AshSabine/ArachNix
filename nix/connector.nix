@@ -13,7 +13,7 @@
       name = mkOption {};
 
       socketType = mkOption {};
-      socketSide = mkOption {};
+      socketSubtype = mkOption {};
 
       pinCount = mkOption { type = types.int; };
       pinsList = mkOption {

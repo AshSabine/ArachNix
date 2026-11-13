@@ -8,13 +8,15 @@
   # ======================================
   socketSubmodule = types.submodule ({
     name, ...
-  }): {
+  }: {
     options = {
+      socketName = mkOption { type = types.str; };
+      
       socketType = mkOption { type = types.str; };
       socketSubtype = mkOption { type = types.str; };
 
       pinCount = mkOption { type = types.int; };
-      pinsList = mkOption {
+      pinNames = mkOption {
         type = types.listOf types.str;
         default = [];
         description = "Automatically populated list of pin names";
@@ -27,15 +29,17 @@
     };
 
     config = {};
-    assertions = {};
-  };
+  });
 
   flattenSockets = path: attrs:
     if attrs ? pinCount then {
-      "${builtins.concatStringsSep "." path}" = attrs // { groups = lib.init path; };
-    } else builtins.foldl'
-      (acc: name: acc // flattenSockets (path ++ [name]) attrs.${name})
-      {} (builtins.attrNames attrs);
+      "${lib.last path}" = attrs // { groups = lib.init path; };
+    } else builtins.foldl' (acc: name: let
+      child = flattenSockets (path ++ [name]) attrs.${name};
+      collisions = builtins.intersectAttrs acc child;
+    in if collisions != {} then
+      throw "ERROR: Duplicate socket names detected across groups: ${builtins.toJSON (builtins.attrNames collisions)}"
+    else acc // child) {} (builtins.attrNames attrs);
 in {
   options.sockets = mkOption {
     type = types.attrs;
@@ -49,4 +53,6 @@ in {
   };
 
   config.system.resolvedSockets = flattenSockets [] config.sockets;
+  
+  config.assertions = {};
 }

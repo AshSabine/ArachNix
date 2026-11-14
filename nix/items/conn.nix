@@ -13,7 +13,10 @@
       connType = mkOption { type = types.str; };    # JST, Molex, etc.
       connSubtype = mkOption { type = types.str; }; # male/andro/female etc.
 
-      pinCount = mkOption { type = types.int; };
+      pinCount = mkOption { type = types.int; };    # maximum pins for this connector
+      wishlist = mkOption {
+        type = types.attrs;
+      };
     };
 
     config = {};

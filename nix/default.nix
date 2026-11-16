@@ -2,11 +2,15 @@
   lib,
   ...
 }: let
-  inherit (lib) types;
+  inherit (lib) mkOption types;
+
+  lib2 = lib.extend (final: prev: {
+    arachnix = import ./lib { lib = final; };
+  });
 in {
   evalHarness = modules: let
-    eval = lib.evalModules {
-      specialArgs = {};
+    eval = lib2.evalModules {
+      specialArgs.lib = lib2;
       modules = [] ++ modules;
     };
     failed = lib.filter (a: !a.assertion) eval.config.assertions;

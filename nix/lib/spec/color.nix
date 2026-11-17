@@ -1,47 +1,50 @@
 {
   lib,
-  extraColors ? {},
+  data,
 }: let
-  inherit (builtins) concatLists filter isList split readFile fromJSON;
-  inherit (lib) mkOption splitString types;
-
+  inherit (builtins) match split filter isList concatLists;
+  inherit (lib) mkOption types concatMap toUpper splitString;
+  
+  ########### External Data #############
   iec = fromJSON (readFile ../../json/iec-60757.json);
   allColors = iec // extraColors;
 
-  reHex = "(#[0-9A-Fa-f]{6})";
-  reIEC = "([A-Z]{2})";
-in {
+  reHex = "#[0-9A-Fa-f]{6}";
+  reIEC = "[A-Z]{2}";
+  
   ############## Parsing ################
-  chunkBy = pattern: str: str 
+  mkColor = ty: val: hex: { inherit ty val hex; };
+  
+  chunk = pattern: str: str 
     |> (split pattern)
     |> (filter isList)
     |> concatLists;
 
-  toChunks = str:
-    if match "${reHex}+" != null
-    then chunkIEC str
-    else [ str ];
+  parse = raw: let
+    expand = tok:
+      if allColors ? ${tok} then [ tok ]
+      else if match "(${reIEC})+" tok != null then chunk reIEC tok
+      else [ tok ];
 
-  parseColor = raw: let
-    chunks = toChunks (splitString ":" raw)
-  in {}
+    classify = tok:
+      if match reHex tok != null then mkColor "HEX" tok tok;
+      else if registry ? {tok} then   mkColor "IEC" tok allColors.${tok}.hex;
+      else                            mkColor "ERR" tok null;
+  in {
+    inherit raw;
+    tokens = raw 
+      |> toUpper
+      |> splitString ":"
+      |> concatMap expand
+      |> map classify;
+  }
 
-
-  parseColor = str: let
-    isHex = builtins.match reHex str;
-    codes = toChunks str;
-    invalid = filter (c: !(builtins.elem baseColors c)) codes;
-  in if !isHex && invalid != [] then
-    throw "ERROR: Unknown IEC color code ${builtins.toJSON invalid}"
-  else { inherit codes isHex; }
-  
   ############# Submodule ###############
-  colorSubmodule = types.submodule {
-    options = {
-      codes = mkOption { type = types.listOf types.str; };
-      isHex = mkOption { type = types.bool; };
-    };
-  };
-
-  colorType = types.coercedTo types.str parseColor colorSubmodule;
+  submodule = types.submodule { options = {
+    raw     = mkOption { type = types.str; };
+    tokens  = mkOption { type = types.listOf types.attrs; };
+  }; };
+in {
+  inherit parse;
+  type = types.coercedTo types.str parse submodule;
 }

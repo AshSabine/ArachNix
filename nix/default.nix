@@ -1,20 +1,21 @@
 {
-  lib,
-  ...
+  lib
 }: let
-  inherit (lib) mkOption types;
-
-  lib2 = lib.extend (final: prev: {
-    arachnix = import ./lib { lib = final; };
-  });
+  arx = import ./lib { inherit lib; };
 in {
-  evalHarness = modules: let
-    eval = lib2.evalModules {
-      specialArgs.lib = lib2;
-      modules = [] ++ modules;
+  inherit arx;
+
+  evalHarness = extra: let
+    eval = lib.evalModules {
+      modules = (import ./module) ++ extra;
+      specialArgs = {
+        inherit (arx) data rule spec;
+      };
     };
-    failed = lib.filter (a: !a.assertion) eval.config.assertions;
-  in if failed != [] then
-    throw ("Harness errors:\n" + lib.concatMapStringsSep "\n" (a: "- ${a.message}") failed)
-  else lib.showWarnings eval.config.warnings eval.config.output;
+
+    cfg = eval.config;
+  in {
+    inherit (cfg) results stats output;
+    ok = !(lib.any (r: r.severity == "error") cfg.results);
+  }
 }

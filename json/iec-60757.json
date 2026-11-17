@@ -1,0 +1,16 @@
+{
+	"BK":	{ "hex": "#000000" },
+	"BN":	{ "hex": "#7B4A26" } ,
+	"RD":	{ "hex": "#D62828" },
+	"OG":	{ "hex": "#F77F00" },
+	"YE":	{ "hex": "#FFD60A" },
+	"GN":	{ "hex": "#2E9E48" },
+	"BU":	{ "hex": "#1F4FBF" },
+	"VT":	{ "hex": "#7B3FA0" },
+	"GY":	{ "hex": "#8D9096" },
+	"WH":	{ "hex": "#FFFFFF" },
+	"PK":	{ "hex": "#F28CB1" },
+	"GD":	{ "hex": "#C9A227" },
+	"TQ":	{ "hex": "#17B8B0" },
+	"SR":	{ "hex": "#C0C4CC" }
+}

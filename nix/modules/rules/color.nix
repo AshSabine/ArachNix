@@ -3,20 +3,18 @@
   rule,
   ...
 }: let
-  colors = resolved: resolved 
-    |> rule.all "cables"
-    |> rule.into "cores"
-    |> rule.each 
-    |> (rule.into "color");
+  inherit (rule) mkAssert failIf;
 
-  tokens = resolved: (colors resolved)
-    |> rule.into "tokens"
-    |> rule.each;
-in {
-  config.asserts = [
-    (rule.mkAssert "color-invalid" "error" {
-      select = tokens;
-      judge  = t: if t.ty == "ERR" then "unknown color '${t.value}'" else null;
-    })
-  ];
-}
+  colors = data: data |> rule.all "cores" |> rule.into "color";
+  tokens = data: data |> colors |> rule.into "tokens" |> rule.each;
+in { config.asserts = [
+  (mkAssert "color-invalid" "error" "resolve" {
+    select = tokens;
+    check = t: failIf (t.ty == "ERR") "unknown color '${t.val}'";
+  })
+  (mkAssert "render-fallback" "warning" "output" {
+    select = rule.all "cores";
+    check = c: failIf c.colorFallback
+      "color cannot be rendered; drawn with placeholder color"; 
+  })
+]; }

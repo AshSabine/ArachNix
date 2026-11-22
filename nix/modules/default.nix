@@ -1,5 +1,9 @@
-[
-  ./core.nix
-  ./items
-  ./rules
-]
+{
+  imports = [
+    ./items
+    ./rules
+    ./kernel.nix
+    ./output.nix
+    ./netlist.nix
+  ];
+}

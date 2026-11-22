@@ -7,15 +7,19 @@ in {
 
   evalHarness = extra: let
     eval = lib.evalModules {
-      modules = (import ./module) ++ extra;
+      modules = [ ./modules ] ++ extra;
       specialArgs = {
-        inherit (arx) data rule spec;
+        inherit (arx) data net rule spec;
       };
     };
 
     cfg = eval.config;
+    results = cfg.results
+      |> lib.attrValues
+      |> lib.concatLists;
   in {
-    inherit (cfg) results stats output;
-    ok = !(lib.any (r: r.severity == "error") cfg.results);
-  }
+    inherit results;
+    inherit (cfg) stats resolved netlist output;
+    ok = !(lib.any (r: r.severity == "error" && !r.ignored) results);
+  };
 }

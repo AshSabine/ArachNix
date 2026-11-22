@@ -1,57 +1,57 @@
 {
   lib
 }: let
-  # TODO: Find more descriptive names than `select`, `subject`, `judge`.
-  # TODO: Break out the { subject = ...; value = ...; } pattern into a lambda
-  # to ease readability.
-in rec {
+  mkItem = path: value: { inherit path value; };
+in {
   /**
-    Selectors turn a resolved layer into items: `{ subject; value; }`.
-    Each selector extends the subject path, so asserts never build 
+    An assert selects items, then checks each one.
+
+    # Type
+    ```
+    mkAssert :: String -> String -> String -> { select :: attrSet -> [item]; check :: a -> null | String; } -> Assert
+    ```
+    `check` returns `null` when the item passes, or a message describing the problem.
+  */
+  mkAssert  = id: severity: stage: { select, check }: { 
+    inherit id severity stage select check;
+  };
+
+  # Short macro to make selectors easier.
+  # Check helpers
+  failIf  = cond: text: if cond then text else null;
+  require = cond: text: if cond then null else text;
+
+  /**
+    Selectors turn a resolved layer into items: `{ path; value; }`.
+    Each selector extends the path, so asserts never build 
     paths by hand.
   */
 
   # all "cables" :: resolved -> [ item ]
   # one item per object of type
-  selectAll = ty: resolved: let
+  all = ty: resolved: let
     allTy = resolved.${ty} or {};
-    selector = id: v: { subject = "${ty}.${id}"; value = v; };
+    selector = id: v: mkItem "${ty}.${id}" v;
   in allTy |> (lib.mapAttrsToList selector);
   
   # into "color" :: [ item ] -> [ item ]
   # descend into a field (skip if absent)
   into = field: items: let
-    hasField = item: lib.optional (item.value ? ${field}) {
-      subject = "${i.subject}.${field}";
-      value = i.value.${field};
-    };
+    hasField = item: lib.optional
+      (item.value ? ${field} && item.value.${field} != null) 
+      (mkItem "${item.path}.${field}" item.value.${field});
   in items |> (lib.concatMap hasField);
 
   # each :: [ item ] -> [ item ]
   # fan a list (symb[0]) or an attrset (.H) out into items
-  each = items: let
-    toResult  = k: v: {
-      subject = "{i.subject}.{k}";
-      value = v;
-    };
-
-    toResults = n: v: { 
-      subject = "${i.subject}[${toString n}]";
-      value = v;
-    };
-  in items |> lib.concatMap (item: if lib.isList item.value
-    then lib.imap0 toResults item.value; 
-    else lib.mapAttrsToList toResults item.value;
+  each = items: items |> lib.concatMap (item:
+    if builtins.isList item.value
+    then item.value |> lib.imap0 (k: v: 
+      mkItem "${item.path}[${toString k}]" v)
+    else item.value |> lib.mapAttrsToList (n: v: 
+      mkItem "${item.path}.${n}" v)
   );
 
-  /**
-    An assert selects items, then judges each one.
-
-    # Type
-    ```
-    mkAssert :: String -> String -> { select :: attrSet -> [item]; judge :: a -> null | String; } -> Assert
-    ```
-    `judge` returns `null` when the item passes, or a message describing the problem.
-  */
-  mkAssert  = id: severity: { select, judge }: { inherit id severity select judge; };
+  # Keep items whose value satisfies a predicate
+  where = pred: builtins.filter (item: pred item.value);
 }

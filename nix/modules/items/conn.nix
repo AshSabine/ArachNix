@@ -1,78 +1,72 @@
 {
-  config,
   lib,
+  spec,
+  config,
   ...
 }: let
   inherit (lib) mkOption types;
 
   ############ Declaration ###############
-  connDeclaration = types.submodule ({
-    name, ...
-  }: {
-    options = {
-      connType = mkOption { type = types.str; };    # JST, Molex, etc.
-      connSubtype = mkOption { type = types.str; }; # male/andro/female etc.
+  connDeclaration = types.submodule { options = {
+    bom      = mkOption { type = spec.bom.type; default = {}; };
+    props    = mkOption { type = types.attrsOf types.anything; default = {}; };
+    connType = mkOption { type = types.nullOr types.str; default = null; }; # male/andro/female etc.
 
-      pinCount = mkOption { type = types.int; };    # maximum pins for this connector
-      wishlist = mkOption {
-        type = types.attrs;
-      };
-    };
+    pinCount = mkOption { type = types.int; }; # maximum pins for this connector
+    requests = mkOption { type = types.listOf spec.conn.request; default = []; };
 
-    config = {};
-  });
+  }; };
 
   ############ Resolution ################
-  resolveConn = path: attrs:
-    if attrs ? pinCount then {
-      "${lib.last path}" = attrs // { groups = lib.init path; };
-    } else builtins.foldl' (acc: name: let
-      child = resolveConn (path ++ [name]) attrs.${name};
-      collisions = builtins.intersectAttrs acc child;
-    in if collisions != {} then
-      throw "ERROR: Duplicate connector names detected across groups: ${builtins.toJSON (builtins.attrNames collisions)}"
-    else acc // child) {} (builtins.attrNames attrs);
+  connResolution = types.submodule { options = {
+    # Exists for enforced disambiguation during validation step
+    connName  = mkOption { type = types.str; };
+    connPaths = mkOption { type = types.listOf types.str; };
+    groups    = mkOption { type = types.listOf types.str; };
     
-  connResolution = types.submodule ({
-    name, ...
-  }: {
-    options = {
-      # Exists for enforced disambiguation during validation step
-      connName = mkOption { type = types.str; };
-      
-      connType = mkOption { type = types.str; };    # JST, Molex, etc.
-      connSubtype = mkOption { type = types.str; }; # male/andro/female etc.
+    # Reflected properties
+    bom       = mkOption { type = spec.bom.type; default = {}; };
+    props     = mkOption { type = types.attrsOf types.anything; default = {}; };
+    connType  = mkOption { type = types.nullOr types.str; default = null; }; # male/andro/female etc.
 
-      pinCount = mkOption { type = types.int; };
-      pinNames = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "Automatically populated list of pin names/labels";
-      };
-
-      groups = mkOption {
-        type = types.listOf types.str;
-        description = "Automatically populated list of parent groups";
-      };
-    };
-
-    config = {};
-  });
+    pinCount  = mkOption { type = types.int; }; # maximum pin count
+    requests  = mkOption { type = types.listOf spec.conn.request; };
+  }; };
+  
+  # Resolution helper.
+  resolveConn = connName: leaves: let
+    connPaths = leaves |> map (l:
+      lib.concatStringsSep "."
+      (l.groups ++ [ l.name ])
+    );
+    
+    first = lib.head leaves;
+    requests = first.value.requests;
+  in {
+    inherit connName connPaths requests;
+    inherit (first) groups;
+    inherit (first.value) bom props connType pinCount;
+  };
 in {
   ############ Declaration ###############
   options.connectors = mkOption {
-    type = types.attrs; default = {};
+    type = spec.conn.mkTree {
+      leaf = connDeclaration;
+      isLeaf = spec.conn.isLeaf;
+      leafName = "connector";
+    };
+    default = {};
     description = "Hierarchical declaration of connectors.";
   };
 
   ############ Resolution ################
-  options.system.resolvedConnectors = mkOption {
+  options.resolved.connectors = mkOption {
     type = types.attrsOf connResolution;
-    readOnly = true; internal = true;
+    readOnly = true;
   };
 
-  config.system.resolvedConnectors = resolveConn [] config.connectors;
-  
-  ############ Validation ################
-  #config.assertions = {};
+  config.resolved.connectors = config.connectors
+    |> spec.conn.denest []
+    |> lib.groupBy (l: l.name)
+    |> lib.mapAttrs resolveConn;
 }

@@ -1,60 +1,38 @@
 {
-  config,
   lib,
+  spec,
+  config,
   ...
 }: let
   inherit (lib) mkOption types;
 
   ############ Declaration ###############
-  cableDeclaration = types.submodule ({
-    name, ...
-  }: {
-    options = {
-      #   Circuit information
-      # Pin assignments are not part of the cable information
-      pinLabels = mkOption {
-        type = types.listOf types.str;
-        description = "Labels for pins connected by this cable";
-      };
-
-      pinColors = mkOption {
-        type = types.listOf types.str;
-        description = "Colors for pins connected by this cable";
-      };
-
-      # Connection information
-      connList = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "Connectors joined to form a common circuit by this cable.";
-      };
-
-      # Material information
-    };
-
-    config = {};
-  });
+  cableDeclaration = types.submodule { options = {
+    bom   = mkOption { type = spec.bom.type; default = {}; };
+    props = mkOption { type = types.attrsOf types.anything; default = {}; };
+  }; };
 
   ############ Resolution ################
-  resolveCable = attrs: {};  # TODO
-
-  cableResolution = types.submodule ({
-    name, ...
-  }: {
-    options = {};
-  });
+  cableResolution = types.submodule { options = {
+    id    = mkOption { type = types.str; };
+    bom   = mkOption { type = spec.bom.type; };
+    props = mkOption { type = types.attrsOf types.anything; };
+  }; };
 in {
   ############ Declaration ###############
-  options.cables = mkOption {  # TODO
+  options.cables = mkOption {
     type = types.attrsOf cableDeclaration;
-    description = "Declaration of all extant pin-to-pin connections";
+    default = {};
   };
   
   ############ Resolution ################
-  options.system.resolvedCables = mkOption {
+  options.resolved.cables = mkOption {
     type = types.attrsOf cableResolution;
+    readOnly = true;
   };
 
-  ############ Validation ################
-  #config.assertions = {};
+  config.resolved.cables = lib.mapAttrs (id: c: {
+    inherit id;
+    inherit (c) bom props;
+  }) config.cables;
 }

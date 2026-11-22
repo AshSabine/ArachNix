@@ -1,7 +1,7 @@
 {
   pkgs
 }: let
-  inherit (pkgs.lib) attrValues
+  inherit (pkgs.lib) attrValues;
 in pkgs.writeShellApplication {
   name = "arachnix";
   runtimeInputs = (attrValues {

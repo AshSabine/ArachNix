@@ -11,9 +11,20 @@ usage() {
 	exit 1
 }
 
-# cmd_results() { }
+cmd_results() {
+	local json_file="$1"
+	echo -e "\n=== ArachNix Results ==="
+	# Extracts the nested results attribute, filters out ignored warnings, and formats them
+	jq -r '
+	.results | to_entries[].value[] 
+	| select(.ignored == false)
+	| "[\(.severity | ascii_upcase)] \(.stage) stage at \(.path): \(.msg)"
+	' "$json_file"
+}
 
-# cmd_viz() {}
+cmd_viz() {
+	local json_file="$1"
+}
 
 cmd_eval() {
 	local target="$1"
@@ -38,7 +49,7 @@ cmd_eval() {
   
 	echo "Saved evaluation to $out_file"
 
-#	if [ $show_results -eq 1 ]; then cmd_results "$out_file"; fi
-#	if [ $run_viz -eq 1 ]; then cmd_viz "$out_file"; fi
+	if [ $show_results -eq 1 ]; then cmd_results "$out_file"; fi
+	if [ $run_viz -eq 1 ]; then cmd_viz "$out_file"; fi
 }
 

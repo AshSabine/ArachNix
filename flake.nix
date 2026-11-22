@@ -9,10 +9,8 @@
     ];
   in {
     # TODO: Introduce packages as necessary.
-    packages = forSystems (system: {});
-
     devShells = forSystems (system: let
-      pkgs = nixpkgs.legacyPackages.system;
+      pkgs = nixpkgs.legacyPackages.${system};
       arachnix-cli = import ./sh { inherit pkgs; };
     in { default = pkgs.mkShell { packages = [ arachnix-cli ]; }; }); 
   };

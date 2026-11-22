@@ -13,7 +13,7 @@
     connType = mkOption { type = types.nullOr types.str; default = null; }; # male/andro/female etc.
 
     pinCount = mkOption { type = types.int; }; # maximum pins for this connector
-    requests = mkOption { type = types.listOf spec.conn.request; default = []; };
+    pins = mkOption { type = types.listOf spec.conn.request; default = []; };
 
   }; };
 
@@ -30,7 +30,7 @@
     connType  = mkOption { type = types.nullOr types.str; default = null; }; # male/andro/female etc.
 
     pinCount  = mkOption { type = types.int; }; # maximum pin count
-    requests  = mkOption { type = types.listOf spec.conn.request; };
+    pins  = mkOption { type = types.listOf spec.conn.request; };
   }; };
   
   # Resolution helper.
@@ -41,9 +41,9 @@
     );
     
     first = lib.head leaves;
-    requests = first.value.requests;
+    pins = first.value.pins;
   in {
-    inherit connName connPaths requests;
+    inherit connName connPaths pins;
     inherit (first) groups;
     inherit (first.value) bom props connType pinCount;
   };

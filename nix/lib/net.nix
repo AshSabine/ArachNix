@@ -30,7 +30,7 @@ in {
     # Maps a connector (name-value pair) to an attrSet of its request names. Each
     # request is mapped to `{ <connName> = true; }`, which is used later to eval-
     # uate pin request satisfaction by checking attrSet membership.
-    reqs = mapAttrs (_: c: c.requests
+    reqs = mapAttrs (_: c: c.pins
       |> lib.filter (r: r.name != null)
       |> map (r: lib.nameValuePair r.name true)
       |> lib.listToAttrs
@@ -93,6 +93,6 @@ in {
       owner = "connectors.${conn}";
       index = i;
     };
-  in indexItems toRow (c: c.requests) resolved.connectors;
+  in indexItems toRow (c: c.pins) resolved.connectors;
 
 }

@@ -18,13 +18,13 @@ in { config.asserts = [
   })
   (mkAssert "conn-pin-overflow" "error" "resolve" {
     select = conns;
-    check  = c: let n = builtins.length c.requests; in failIf (n > c.pinCount)
+    check  = c: let n = builtins.length c.pins; in failIf (n > c.pinCount)
       "${toString n} pins declared on a ${toString c.pinCount}-pin connector";
   })
   (mkAssert "conn-pin-duplicate" "error" "resolve" {
     select = conns;
     check  = c: let
-      dups = c.requests |> map (q: q.name) |> lib.filter (n: n != null) |> net.duplicates;
+      dups = c.pins |> map (q: q.name) |> lib.filter (n: n != null) |> net.duplicates;
     in failIf (dups != []) "duplicate pin request(s): ${lib.concatStringsSep ", " dups}";
   })
   (mkAssert "conn-pin-unnamed" "error" "resolve" {
@@ -35,7 +35,7 @@ in { config.asserts = [
   ############ Validate ############
   (mkAssert "conn-pin-unspecified" "warning" "validate" {
     select = conns;
-    check  = c: let n = c.pinCount - builtins.length c.requests; in
+    check  = c: let n = c.pinCount - builtins.length c.pins; in
       failIf (n > 0) "${toString n} pin(s) neither requested nor marked N/C";
   })
   (mkAssert "pin-unsatisfied" "warning" "validate" {

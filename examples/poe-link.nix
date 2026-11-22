@@ -2,12 +2,12 @@
   t = import ./templates.nix { inherit lib; };
 in {
   connectors.switch.swPort1 = t.rj45 { 
-    requests = t.poe.requests;
+    pins = t.poe.pins;
   };
 
   connectors.board.poeHdr   = {
     pinCount = 6;
-    requests = t.poe.requests ++ [
+    pins = t.poe.pins ++ [
       { name = "GND"; }
       { nc = true; }
     ]; 
@@ -16,13 +16,13 @@ in {
   cables.link = t.cat8 { 
     from = "swPort1"; 
     to = "poeHdr"; 
-    requests = t.poe.requests;
+    pins = t.poe.pins;
   };
 
   # A splice box: cores that join more than two pins.
   connectors.engine.spliceBox = { 
     pinCount = 6; 
-    requests = [ "A" "B" "C" "D" "E" "F" ] |> map (n: { name = n; });
+    pins = [ "A" "B" "C" "D" "E" "F" ] |> map (n: { name = n; });
   };
 
   cables.bus.cores = [

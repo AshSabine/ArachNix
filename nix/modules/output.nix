@@ -57,7 +57,7 @@ in {
     conns = mapAttrs (name: c: {
       inherit (c) connName groups connType pinCount;
       issues = issuesOf "connectors.${name}";
-      requests = pinsByConn.${name} or []
+      pins = pinsByConn.${name} or []
         |> lib.sort (a: b: a.index < b.index)
         |> map (p: {
           inherit (p) name nc supply; # TODO supply is wrong

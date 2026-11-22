@@ -6,8 +6,7 @@
   inherit (lib) mkOption types concatMap toUpper splitString;
   
   ########### External Data #############
-  iec = fromJSON (readFile ../../json/iec-60757.json);
-  allColors = iec // extraColors;
+  allColors = data.iec60757;
 
   reHex = "#[0-9A-Fa-f]{6}";
   reIEC = "[A-Z]{2}";
@@ -23,12 +22,12 @@
   parse = raw: let
     expand = tok:
       if allColors ? ${tok} then [ tok ]
-      else if match "(${reIEC})+" tok != null then chunk reIEC tok
+      else if match "(${reIEC})+" tok != null then chunk "(${reIEC})" tok
       else [ tok ];
 
     classify = tok:
-      if match reHex tok != null then mkColor "HEX" tok tok;
-      else if registry ? {tok} then   mkColor "IEC" tok allColors.${tok}.hex;
+      if match reHex tok != null then mkColor "HEX" tok tok
+      else if allColors ? ${tok} then mkColor "IEC" tok allColors.${tok}.hex
       else                            mkColor "ERR" tok null;
   in {
     inherit raw;
@@ -37,7 +36,7 @@
       |> splitString ":"
       |> concatMap expand
       |> map classify;
-  }
+  };
 
   ############# Submodule ###############
   submodule = types.submodule { options = {

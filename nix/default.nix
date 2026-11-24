@@ -9,7 +9,7 @@ in {
     eval = lib.evalModules {
       modules = [ ./modules ] ++ extra;
       specialArgs = {
-        inherit (arx) data net rule spec;
+        inherit (arx) std net data spec rule;
       };
     };
 

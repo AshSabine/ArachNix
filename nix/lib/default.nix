@@ -1,10 +1,11 @@
 {
   lib,
 }: let
-  data = import ./data.nix { inherit lib; };
+  std  = import ./std.nix  { inherit lib; };
   net  = import ./net.nix  { inherit lib; };
-  rule = import ./rule.nix { inherit lib; };
+  data = import ./data.nix { inherit lib; };
   spec = import ./spec { inherit lib data; };
+  rule = import ./rule.nix { inherit lib; };
 in {
-  inherit data net rule spec;
+  inherit std net data spec rule;
 }

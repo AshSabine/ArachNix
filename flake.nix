@@ -13,19 +13,18 @@
     # TODO: Introduce packages as necessary.
     devShells = forSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
+      
       cli = pkgs.writeShellApplication {
         name = "arachnix";
-        runtimeInputs = [ pkgs.nix pkgs.jq pkgs.git pkgs.coreutils pkgs.util-linux viz ]
-          ++ nixpkgs.lib.optional (pkgs ? wireviz) pkgs.wireviz;
+        runtimeInputs = [ pkgs.nix pkgs.jq pkgs.git ];
         text = builtins.readFile ./cli/arachnix.sh;
       };
-
     in {
       default = pkgs.mkShell {
-        packages = [ cli viz pkgs.jq ];
+        packages = [ cli pkgs.jq ];
         shellHook = ''
           export ARACHNIX_ROOT="$PWD"
-          echo "arachnix: eval | check | viz (arachnix help)"
+          echo "arachnix: eval | check (arachnix help)"
         '';
       };
     }); 

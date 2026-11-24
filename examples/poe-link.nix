@@ -1,11 +1,14 @@
-{ lib, ... }: let
-  t = import ./templates.nix { inherit lib; };
+{
+  lib,
+  std,
+  ...
+}: let
+  inherit (std) mkPins pinsFor;
+  t = import ./templates.nix { inherit lib std; };
 in {
-  connectors.switch.swPort1 = t.rj45 { 
-    pins = t.poe.pins;
-  };
+  connectors.switch.swPort1 = t.rj45 { pins = t.poe.pins; };
 
-  connectors.board.poeHdr   = {
+  connectors.board.poeHdr = {
     pinCount = 6;
     pins = t.poe.pins ++ [
       { name = "GND"; }
@@ -13,34 +16,30 @@ in {
     ]; 
   };
 
-  cables.link = t.cat8 { 
-    from = "swPort1"; 
-    to = "poeHdr"; 
-    pins = t.poe.pins;
-  };
+  cables.link = t.cat8 "swPort1" "poeHdr" t.poe.pins;
 
   # A splice box: cores that join more than two pins.
   connectors.engine.spliceBox = { 
     pinCount = 6; 
-    pins = [ "A" "B" "C" "D" "E" "F" ] |> map (n: { name = n; });
+    pins = mkPins [ "A" "B" "C" "D" "E" "F" ];
   };
 
   cables.bus.cores = [
-    { name = "lvA"; conns = [ "spliceBox#A" "spliceBox#B" "spliceBox#C" ]; }                       # no root: warning
-    { name = "lvB"; conns = [ "spliceBox#D" "spliceBox#E" "spliceBox#F" ]; root = "spliceBox#D"; } # root declared
+    { name = "lvA"; conns = pinsFor "spliceBox" [ "A" "B" "C" ]; }                       # no root: warning
+    { name = "lvB"; conns = pinsFor "spliceBox" [ "D" "E" "F" ]; root = "spliceBox#D"; } # root declared
   ];
 
   # Deliberately broken extras.
-  #connectors.engine.poeHdr = { 
-  #  pinCount = 2;
-  #};      # same connector name in another group
+  connectors.engine.poeHdr = { 
+    pinCount = 2;
+  };      # same connector name in another group
 
-  #cables.extra.cores = 
-  #  { conns = [ "swPort1#TX+" "poeHdr#NOPE" ]; color = "RDB"; }
-  #  { conns = [ "swPort1#TX-" ]; }
-  #  { name = "ground"; conns = [ "poeHdr#GND" "poeHdr#GND" ]; }
-  #  { name = "ground"; conns = [ "spliceBox#A" "spliceBox#B" ]; root = "spliceBox#Z"; }
-  #];
+  cables.extra.cores = [
+    { conns = [ "swPort1#TX+" "poeHdr#NOPE" ]; color = "RDB"; }
+    { conns = [ "swPort1#TX-" ]; }
+    { name = "ground"; conns = pinsFor "poeHdr" [ "GND" "GND" ]; }
+    { name = "ground"; conns = pinsFor "spliceBox" [ "A" "B" ]; root = "spliceBox#Z"; }
+  ];
 
   #cables.empty = {};
 

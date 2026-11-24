@@ -41,9 +41,10 @@ done
 
 ############# Commands ###############
 build_json() {
-	local tgt="$(realpath "$1")";
+	local tgt
+	tgt="$(realpath "$1")";
 	nix eval --json --impure --extra-experimental-features "$features" --expr \
-		"(builtins.getFlake \"path:$root\").lib.evalHarness [ (/. + \"$harness\") ]"
+		"(builtins.getFlake \"path:$root\").lib.evalHarness [ (/. + \"$tgt\") ]"
 }
 
 cmd_eval() {
@@ -70,7 +71,8 @@ cmd_check() {
 
 cmd_viz() {
   local outdir="${out:-build}"
-  local base="$outdir/$(basename "$harness" .nix)"
+  local base
+  base="$outdir/$(basename "$harness" .nix)"
 
   mkdir -p "$outdir"
   build_json "$harness" > "$base.json"

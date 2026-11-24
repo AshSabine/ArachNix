@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
 usage() {
 	echo "Usage: arachnix <command> [args]"
 	echo ""

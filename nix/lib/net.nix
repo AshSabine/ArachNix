@@ -21,7 +21,7 @@
 
   validEps = eps: eps
     |> lib.attrValues
-    |> filter (e: e.pinFound);
+    |> filter (e: e.status == 3); # STATUS 3 -> nonnull
 in {
   inherit duplicates;
 
@@ -37,13 +37,13 @@ in {
     ) resolved.connectors;
 
     # 
-    inspect = id: i: e: let
-      parsed = e.conn != null;
-      connFound = parsed && reqs ? ${e.conn};
-      pinFound = connFound && reqs.${e.conn} ? ${e.pin};
-    in {
-      inherit parsed connFound pinFound;
+    inspect = id: i: e: {
       inherit (e) raw conn pin;
+
+      status = if e.conn == null              then 0  # NULL
+        else if !(reqs ? ${e.conn})           then 1  # NO CONN
+        else if !(reqs.${e.conn} ? ${e.pin})  then 2  # NO PIN
+        else 3;                                       # SUCCESS
 
       owner = "cores.${id}";
       core  = id;

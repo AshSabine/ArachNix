@@ -43,23 +43,23 @@
       if core.name == null then toString i
       else if counts.${core.name} == 1 then core.name
       else "${core.name}~${toString i}";
-
-    toResolved = i: core: let
-      id = "${cable}.${localID i core}";
-    in lib.nameValuePair id {
-      inherit id cable;
-      inherit (core) name color conns root;
-      index = i;
-    };
-  in c.cores |> lib.imap0 toResolved;
+  in c.cores |> lib.imap0 (i: core: let
+    id = "${cable}.${localID i core}";
+  in lib.nameValuePair id {
+    inherit (core) name color conns root;
+    inherit cable id;
+    index = i;
+  });
 in {
   ############# Declaration #############
-  options.cables = let
-    coreSubmodule = types.submodule { options.cores = mkOption {
-      type = types.listOf coreDeclaration;
-      default = [];
-    }; };
-  in mkOption { type = types.attrsOf coreSubmodule; };
+  options.cables = mkOption {
+    type = types.attrsOf (types.submodule {
+      options.cores = mkOption {
+        type = types.listOf coreDeclaration;
+        default = [];
+      };
+    });
+  };
 
   ############# Resolution ##############
   options.resolved.cores = mkOption {
@@ -70,4 +70,20 @@ in {
   config.resolved.cores = config.cables
     |> lib.mapAttrsToList resolveCable
     |> lib.concatLists |> lib.listToAttrs;
+  
+  options.resolved.cables = mkOption {
+    type = types.attrsOf (types.submodule {
+      options.cores = mkOption {
+        type = types.listOf coreResolution;
+        default = [];
+      };
+    });
+  };
+
+  config.resolved.cables = config.resolved.cores
+    |> lib.attrValues
+    |> lib.groupBy (core: core.cable)
+    |> lib.mapAttrs (_: cores: {
+      cores = lib.sort (a: b: a.index < b.index) cores;
+    });
 }

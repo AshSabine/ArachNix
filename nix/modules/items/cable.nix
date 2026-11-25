@@ -28,7 +28,7 @@ in {
   ############ Resolution ################
   options.resolved.cables = mkOption {
     type = types.attrsOf cableResolution;
-    readOnly = true;
+    internal = true;
   };
 
   config.resolved.cables = lib.mapAttrs (id: c: {

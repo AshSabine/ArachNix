@@ -13,15 +13,15 @@ in { config.asserts = [
   ############ Resolve ############
   (mkAssert "endpoint-unparseable" "error" "resolve" {
     select = endpoints;
-    check  = e: failIf (e.status == 0) "unparseable endpoint '${e.raw}' (expected conn#pin)";
+    check  = e: failIf (e.status == "NULL") "unparseable endpoint '${e.raw}' (expected conn#pin)";
   })
   (mkAssert "endpoint-unknown-conn" "error" "resolve" {
     select = endpoints;
-    check  = e: failIf (e.status == 1) "unknown connector '${e.conn}'";
+    check  = e: failIf (e.status == "NO CONN") "unknown connector '${e.conn}'";
   })
   (mkAssert "endpoint-unknown-pin" "error" "resolve" {
     select = endpoints;
-    check  = e: failIf (e.status == 2)
+    check  = e: failIf (e.status == "NO PIN")
       "pin '${e.pin}' is not declared on connector '${e.conn}'";
   })
 

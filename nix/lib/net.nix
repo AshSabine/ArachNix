@@ -21,7 +21,7 @@
 
   validEps = eps: eps
     |> lib.attrValues
-    |> filter (e: e.status == 3); # STATUS 3 -> nonnull
+    |> filter (e: e.status == "SUCCESS");
 in {
   inherit duplicates;
 
@@ -40,10 +40,10 @@ in {
     inspect = id: i: e: {
       inherit (e) raw conn pin;
 
-      status = if e.conn == null              then 0  # NULL
-        else if !(reqs ? ${e.conn})           then 1  # NO CONN
-        else if !(reqs.${e.conn} ? ${e.pin})  then 2  # NO PIN
-        else 3;                                       # SUCCESS
+      status = if e.conn == null              then "NULL"
+        else if !(reqs ? ${e.conn})           then "NO CONN"
+        else if !(reqs.${e.conn} ? ${e.pin})  then "NO PIN"
+        else "SUCCESS";
 
       owner = "cores.${id}";
       core  = id;

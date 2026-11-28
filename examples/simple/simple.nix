@@ -30,7 +30,7 @@ in {
     ];
   };
   
-  connectors.chassis.sensor = dt4 {
+  connectors.chassis.sensor = {
     pinCount = 3;
     pins = mkPins [ "12V" "GND" "SIG" ];
   };
